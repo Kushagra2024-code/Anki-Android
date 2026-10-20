@@ -34,6 +34,42 @@ class AutomaticAnswerAndroidTest : RobolectricTest() {
         assertThat(createInstance().settings.millisecondsToShowQuestionFor, equalTo(1500))
     }
 
+    @Test
+    fun `queryOptions correctly maps question, answer, and action from deck config`() {
+        val conf =
+            col.decks.configDictForDeckId(col.decks.selected()).apply {
+                answerAction = AutomaticAnswerAction.ANSWER_HARD
+                secondsToShowQuestion = 2.5
+                secondsToShowAnswer = 4.0
+            }
+        col.decks.save(conf)
+
+        val settings = AutomaticAnswerSettings.queryOptions(col, col.decks.selected())
+        assertThat(settings.answerAction, equalTo(AutomaticAnswerAction.ANSWER_HARD))
+        assertThat(settings.millisecondsToShowQuestionFor, equalTo(2500L))
+        assertThat(settings.millisecondsToShowAnswerFor, equalTo(4000L))
+        assertThat(settings.autoAdvanceIfShowingQuestion, equalTo(true))
+        assertThat(settings.autoAdvanceIfShowingAnswer, equalTo(true))
+        assertThat(settings.isUsable, equalTo(true))
+    }
+
+    @Test
+    fun `queryOptions handles zero durations as disabled auto advance`() {
+        val conf =
+            col.decks.configDictForDeckId(col.decks.selected()).apply {
+                secondsToShowQuestion = 0.0
+                secondsToShowAnswer = 0.0
+            }
+        col.decks.save(conf)
+
+        val settings = AutomaticAnswerSettings.queryOptions(col, col.decks.selected())
+        assertThat(settings.millisecondsToShowQuestionFor, equalTo(0L))
+        assertThat(settings.millisecondsToShowAnswerFor, equalTo(0L))
+        assertThat(settings.autoAdvanceIfShowingQuestion, equalTo(false))
+        assertThat(settings.autoAdvanceIfShowingAnswer, equalTo(false))
+        assertThat(settings.isUsable, equalTo(false))
+    }
+
     private fun resetPrefs() {
         val conf =
             col.decks.configDictForDeckId(col.decks.selected()).apply {
