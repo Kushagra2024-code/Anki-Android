@@ -173,7 +173,12 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val option = selectedSubDialog
-        return if (option == null || !defaultsAreInitialized()) {
+        val subDialogReady =
+            option != null &&
+                defaultsAreInitialized() &&
+                (option.checkAvailability == null || defaultsAreReady())
+
+        return if (!subDialogReady) {
             Timber.i("Showing Custom Study main menu")
             deferredDefaults = loadCustomStudyDefaults()
             // Select the specified deck
@@ -278,7 +283,9 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
      */
     @NeedsTest("17757: fragment not dismissed before result is output")
     private fun buildInputDialog(contextMenuOption: ContextMenuOption): AlertDialog {
-        require(deferredDefaults.isCompleted || selectedSubDialog!!.checkAvailability == null)
+        require(deferredDefaults.isCompleted || selectedSubDialog!!.checkAvailability == null) {
+            "deferredDefaults must be completed for $contextMenuOption"
+        }
         /*
             TODO: Try to change to a standard input dialog (currently the thing holding us back is having the extra
             TODO: hint line for the number of cards available, and having the pre-filled text selected by default)
@@ -807,14 +814,26 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
          * Singleton; initialized when the main screen is loaded
          * This exists so we don't need to pass an unbounded object between fragments
          */
-        private lateinit var deferredDefaults: Deferred<CustomStudyDefaults>
+        @VisibleForTesting(otherwise = PRIVATE)
+        internal lateinit var deferredDefaults: Deferred<CustomStudyDefaults>
 
         /**
          * Whether [deferredDefaults] is initialized; false on restoring the dialog from process
          * death
          */
         // This exists as `isInitialized` can't be checked in an instance of CustomStudyDialog
-        private fun defaultsAreInitialized(): Boolean = ::deferredDefaults.isInitialized
+        @VisibleForTesting(otherwise = PRIVATE)
+        internal fun defaultsAreInitialized(): Boolean = ::deferredDefaults.isInitialized
+
+        /**
+         * Whether [deferredDefaults] is completed successfully and its value is ready to use.
+         */
+        @VisibleForTesting(otherwise = PRIVATE)
+        internal fun defaultsAreReady(): Boolean =
+            defaultsAreInitialized() &&
+                deferredDefaults.isCompleted &&
+                !deferredDefaults.isCancelled &&
+                deferredDefaults.getCompletionExceptionOrNull() == null
 
         /**
          * Creates an instance of the Custom Study Dialog: a user can select a custom study type

@@ -43,6 +43,7 @@ import com.ichi2.testutils.uninitializeField
 import com.ichi2.utils.positiveButton
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.not
@@ -304,6 +305,73 @@ class CustomStudyDialogTest : RobolectricTest() {
         withCustomStudyFragment(args = argumentsDisplayingSubscreen(ContextMenuOption.EXTEND_REV, restoreFromProcessDeath = true)) {
             // ensure we're on the main screen
             onView(withText(TR.customStudyIncreaseTodaysReviewCardLimit()))
+                .inRoot(isDialog())
+                .check(matches(isEnabled()))
+        }
+    }
+
+    @Test
+    fun `subscreen requiring defaults falls back to main menu when defaults are not completed`() {
+        // Issue #22631: If deferredDefaults is initialized but still pending (not completed),
+        // launching a subscreen requiring defaults (e.g. EXTEND_REV) must not crash with
+        // IllegalArgumentException: Failed requirement, and should instead safely show the main menu.
+        CustomStudyDialog.deferredDefaults = CompletableDeferred()
+        val args =
+            requireNotNull(
+                CustomStudyDialog
+                    .createSubDialog(
+                        deckId = Consts.DEFAULT_DECK_ID,
+                        contextMenuAttribute = ContextMenuOption.EXTEND_REV,
+                    ).arguments,
+            )
+
+        withCustomStudyFragment(args = args) {
+            onView(withText(TR.customStudyIncreaseTodaysReviewCardLimit()))
+                .inRoot(isDialog())
+                .check(matches(isEnabled()))
+        }
+    }
+
+    @Test
+    fun `subscreen requiring defaults falls back to main menu when defaults were cancelled`() {
+        // Issue #22631: If deferredDefaults was cancelled (e.g. destroyed lifecycleScope on rotation),
+        // launching a subscreen requiring defaults must safely show the main menu.
+        CustomStudyDialog.deferredDefaults =
+            CompletableDeferred<CustomStudyDialog.CustomStudyDefaults>().apply {
+                cancel()
+            }
+        val args =
+            requireNotNull(
+                CustomStudyDialog
+                    .createSubDialog(
+                        deckId = Consts.DEFAULT_DECK_ID,
+                        contextMenuAttribute = ContextMenuOption.EXTEND_REV,
+                    ).arguments,
+            )
+
+        withCustomStudyFragment(args = args) {
+            onView(withText(TR.customStudyIncreaseTodaysReviewCardLimit()))
+                .inRoot(isDialog())
+                .check(matches(isEnabled()))
+        }
+    }
+
+    @Test
+    fun `subscreen not requiring defaults is shown even if defaults are not completed`() {
+        // Subscreens like STUDY_AHEAD don't use deferredDefaults, so they can be shown
+        // without waiting for deferredDefaults to complete.
+        CustomStudyDialog.deferredDefaults = CompletableDeferred()
+        val args =
+            requireNotNull(
+                CustomStudyDialog
+                    .createSubDialog(
+                        deckId = Consts.DEFAULT_DECK_ID,
+                        contextMenuAttribute = ContextMenuOption.STUDY_AHEAD,
+                    ).arguments,
+            )
+
+        withCustomStudyFragment(args = args) {
+            onView(withText(TR.customStudyReviewAhead()))
                 .inRoot(isDialog())
                 .check(matches(isEnabled()))
         }
