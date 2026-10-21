@@ -6,7 +6,9 @@ package com.ichi2.anki.notetype
 import android.view.WindowManager
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.android.material.behavior.HideViewOnScrollBehavior
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
@@ -107,6 +109,15 @@ class ManageNotetypesTest : RobolectricTest() {
             } finally {
                 advanceUntilIdle()
             }
+        }
+
+    @Test
+    fun `floating action button does not have hide-on-scroll behavior`() =
+        runTest {
+            ensureCollectionLoadIsSynchronous()
+            val activity = startRegularActivity<ManageNotetypes>()
+            val params = activity.binding.floatingActionButton.layoutParams as CoordinatorLayout.LayoutParams
+            assertFalse("FAB should not have hide-on-scroll behavior", params.behavior is HideViewOnScrollBehavior<*>)
         }
 
     private suspend fun <T> TestScope.withQueuedCollectionAccess(block: suspend () -> T): T {

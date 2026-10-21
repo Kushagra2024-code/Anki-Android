@@ -8,7 +8,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
@@ -20,7 +19,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
-import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsCompat.Type.displayCutout
@@ -33,7 +31,6 @@ import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.android.material.behavior.HideViewOnScrollBehavior
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CommonPlurals
@@ -107,13 +104,9 @@ class ManageNotetypes : AnkiActivity(R.layout.activity_manage_note_types) {
         enableToolbar()
         binding.noteTypesList.adapter = notetypesAdapter
         observeProgress(viewModel) { it }
-        binding.floatingActionButton.apply {
-            setOnClickListener {
-                val addNewNotesType = AddNewNotesType(this@ManageNotetypes)
-                launchCatchingTask { addNewNotesType.showAddNewNotetypeDialog() }
-            }
-            val params = (layoutParams as? CoordinatorLayout.LayoutParams)
-            (params?.behavior as? HideViewOnScrollBehavior<View>)?.setViewEdge(HideViewOnScrollBehavior.EDGE_BOTTOM)
+        binding.floatingActionButton.setOnClickListener {
+            val addNewNotesType = AddNewNotesType(this)
+            launchCatchingTask { addNewNotesType.showAddNewNotetypeDialog() }
         }
         binding.btnClearSelection.setOnClickListener { viewModel.clearSelection() }
 
