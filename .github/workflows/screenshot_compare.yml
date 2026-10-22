@@ -91,6 +91,9 @@ jobs:
           while IFS= read -r -d '' compare; do
             module="${compare%%/build/reports/screenshot-diffs/*}"
             relative="${compare#*/build/reports/screenshot-diffs/}"
+            # Strip '/diffs' so images sit directly inside the test class directory:
+            # <class>/diffs/*_compare.png moves to <class>/
+            relative="${relative/\/diffs/}"
             destination="screenshot-diff/$SUBDIR/${module#./}/$relative"
             mkdir -p "$(dirname "$destination")"
             cp "$compare" "$destination"
