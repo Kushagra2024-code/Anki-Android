@@ -27,9 +27,11 @@ class DeckPickerTabletScreenshotTest : ScreenshotTest() {
 
     @Test
     fun deckOverviewKeyboardOpen() =
-        withDeckPicker(deckCount = 1, withCards = true) { deckPicker ->
-            deckPicker.simulateKeyboard()
-            captureScreen("keyboard_open")
+        runTest {
+            withDeckPicker(deckCount = 1, withCards = true) { deckPicker ->
+                deckPicker.simulateKeyboard()
+                captureScreen("keyboard_open")
+            }
         }
 
     @Test
